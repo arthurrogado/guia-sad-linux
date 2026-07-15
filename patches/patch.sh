@@ -78,6 +78,47 @@ mkdir -p "$SIGNNER_DIR"
 printf '0_eToken=/usr/lib/libeToken.so\n' > "$SIGNNER_DIR/drivers.properties"
 echo "Criado $SIGNNER_DIR/drivers.properties"
 
+# --- Launcher irmão do SAD + atalho .desktop ------------------------------
+# Copia o sad-assinador.sh para DENTRO da pasta do SAD (roda sem sair do lugar).
+LAUNCHER_SRC="$PATCH_DIR/../scripts/sad-assinador.sh"
+if [ -f "$LAUNCHER_SRC" ]; then
+  cp -v "$LAUNCHER_SRC" "$SAD_DIR/sad-assinador.sh"
+  chmod +x "$SAD_DIR/sad-assinador.sh"
+else
+  # fallback: cria um launcher mínimo inline se o script irmão não existir
+  cat > "$SAD_DIR/sad-assinador.sh" <<'EOF'
+#!/bin/bash
+DIR="$(cd "$(dirname "$0")" && pwd)"
+JAVA_BIN="$(ls "$HOME"/java/zulu*fx*/bin/java 2>/dev/null | head -1 || true)"
+[ -z "$JAVA_BIN" ] && command -v java >/dev/null 2>&1 && JAVA_BIN="java"
+[ -z "$JAVA_BIN" ] && { echo "ERRO: JDK nao encontrado." >&2; exit 1; }
+cd "$DIR"
+exec "$JAVA_BIN" -cp ".:jdtCompilerAdapter.jar" br.gov.go.detran.sad.MainApp "$@"
+EOF
+  chmod +x "$SAD_DIR/sad-assinador.sh"
+fi
+
+# Ícone (usa o do próprio SAD, se existir)
+ICON="$SAD_DIR/imagens/detran-log.png"
+[ -f "$ICON" ] || ICON=""
+
+DESKTOP_FILE="$HOME/.local/share/applications/sad-assinador.desktop"
+mkdir -p "$(dirname "$DESKTOP_FILE")"
+cat > "$DESKTOP_FILE" <<EOF
+[Desktop Entry]
+Name=SAD Assinador (Linux)
+Comment=Assinador Digital Detran-GO com token eToken no Linux
+Exec=$SAD_DIR/sad-assinador.sh
+Icon=$ICON
+Terminal=false
+Type=Application
+Categories=Office;Java;
+EOF
+chmod +x "$DESKTOP_FILE"
+echo "Atalho criado: $DESKTOP_FILE"
+
 echo ""
 echo "✅ Correções aplicadas com sucesso em: $SAD_DIR"
-echo "Agora abra o SAD (via scripts/sad-assinador.sh) e configure o Certificado A3."
+echo "Atalho no menu de aplicativos: SAD Assinador (Linux)"
+echo "Ou rode direto: $SAD_DIR/sad-assinador.sh"
+echo "Depois, configure o Certificado A3 (Módulo: /usr/lib/libeToken.so, PIN do token)."

@@ -53,10 +53,20 @@ aplicativos.
 ```bash
 # Aplicar só as correções numa pasta do SAD já existente:
 ./patches/patch.sh /caminho/para/SAD-Assinadorv1.2.0
-
-# Rodar:
-./scripts/sad-assinador.sh   # (dentro da pasta do SAD)
 ```
+
+O `patch.sh` já faz tudo sozinho: recompila/injeta os `.class`, cria o
+`~/.signer/drivers.properties`, **copia um `sad-assinador.sh` para DENTRO da pasta
+do SAD** (irmão do programa) e **cria um atalho `SAD Assinador (Linux)` no menu de
+aplicativos** (`.desktop` em `~/.local/share/applications/`).
+
+Depois é só:
+- clicar no atalho do menu, **ou**
+- rodar direto `sad-assinador.sh` dentro da pasta do SAD.
+
+> Observação: o `.desktop` aponta para o caminho absoluto da pasta onde o patch foi
+> aplicado. Se você mover a pasta do SAD depois, rode o `patch.sh` de novo ou edite
+> o `Exec=` do arquivo `~/.local/share/applications/sad-assinador.desktop`.
 
 ## Configurando o certificado (primeiro uso)
 
