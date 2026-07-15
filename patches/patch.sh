@@ -78,24 +78,32 @@ mkdir -p "$SIGNNER_DIR"
 printf '0_eToken=/usr/lib/libeToken.so\n' > "$SIGNNER_DIR/drivers.properties"
 echo "Criado $SIGNNER_DIR/drivers.properties"
 
-# --- Launcher irmão do SAD + atalho .desktop ------------------------------
-# Copia o sad-assinador.sh para DENTRO da pasta do SAD (roda sem sair do lugar).
+# --- Launcher AO LADO da pasta do SAD + atalho .desktop -------------------
+# O launcher fica na pasta PAI (ao lado do .exe original), não dentro da pasta extraída.
+SAD_PARENT="$(dirname "$SAD_DIR")"
 LAUNCHER_SRC="$PATCH_DIR/../scripts/sad-assinador.sh"
+
+# Cria o launcher na pasta pai
 if [ -f "$LAUNCHER_SRC" ]; then
-  cp -v "$LAUNCHER_SRC" "$SAD_DIR/sad-assinador.sh"
-  chmod +x "$SAD_DIR/sad-assinador.sh"
+  cp -v "$LAUNCHER_SRC" "$SAD_PARENT/sad-assinador.sh"
+  chmod +x "$SAD_PARENT/sad-assinador.sh"
 else
-  # fallback: cria um launcher mínimo inline se o script irmão não existir
-  cat > "$SAD_DIR/sad-assinador.sh" <<'EOF'
+  # fallback: cria um launcher mínimo inline
+  cat > "$SAD_PARENT/sad-assinador.sh" <<'EOF'
 #!/bin/bash
+# Launcher do SAD Assinador - detecta automaticamente a pasta do SAD
 DIR="$(cd "$(dirname "$0")" && pwd)"
+# Procura a subpasta que contém MainApp.class
+SAD_SUBDIR="$(find "$DIR" -maxdepth 2 -name "MainApp.class" -path "*/br/gov/go/detuan/sad/*" 2>/dev/null | head -1 | xargs dirname 2>/dev/null | xargs dirname 2>/dev/null | xargs dirname 2>/dev/null | xargs dirname 2>/dev/null)"
+[ -z "$SAD_SUBDIR" ] && SAD_SUBDIR="$(find "$DIR" -maxdepth 2 -type d -name "SAD-Assinador*" 2>/dev/null | head -1)"
+[ -z "$SAD_SUBDIR" ] && { echo "ERRO: pasta do SAD nao encontrada." >&2; exit 1; }
 JAVA_BIN="$(ls "$HOME"/java/zulu*fx*/bin/java 2>/dev/null | head -1 || true)"
 [ -z "$JAVA_BIN" ] && command -v java >/dev/null 2>&1 && JAVA_BIN="java"
 [ -z "$JAVA_BIN" ] && { echo "ERRO: JDK nao encontrado." >&2; exit 1; }
-cd "$DIR"
+cd "$SAD_SUBDIR"
 exec "$JAVA_BIN" -cp ".:jdtCompilerAdapter.jar" br.gov.go.detran.sad.MainApp "$@"
 EOF
-  chmod +x "$SAD_DIR/sad-assinador.sh"
+  chmod +x "$SAD_PARENT/sad-assinador.sh"
 fi
 
 # Ícone (usa o do próprio SAD, se existir)
@@ -108,7 +116,7 @@ cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Name=SAD Assinador (Linux)
 Comment=Assinador Digital Detran-GO com token eToken no Linux
-Exec=$SAD_DIR/sad-assinador.sh
+Exec=$SAD_PARENT/sad-assinador.sh
 Icon=$ICON
 Terminal=false
 Type=Application
@@ -119,6 +127,6 @@ echo "Atalho criado: $DESKTOP_FILE"
 
 echo ""
 echo "✅ Correções aplicadas com sucesso em: $SAD_DIR"
+echo "Launcher criado: $SAD_PARENT/sad-assinador.sh"
 echo "Atalho no menu de aplicativos: SAD Assinador (Linux)"
-echo "Ou rode direto: $SAD_DIR/sad-assinador.sh"
 echo "Depois, configure o Certificado A3 (Módulo: /usr/lib/libeToken.so, PIN do token)."
