@@ -34,49 +34,50 @@ public class OIDGeneric {
         is = new ASN1InputStream(data);
         ASN1Primitive obj = is.readObject();
         
-        ASN1ObjectIdentifier oid;
-        DERTaggedObject taggedObject;
+        ASN1ObjectIdentifier oid = null;
+        String extractedData = "";
         
-        // Certificados ICP-Brasil modernos podem usar DERTaggedObject em vez de DLSequence
+        // Certificados ICP-Brasil podem usar diferentes estruturas ASN.1
         if (obj instanceof DLSequence) {
             DLSequence sequence = (DLSequence) obj;
-            oid = (ASN1ObjectIdentifier) sequence.getObjectAt(0);
-            taggedObject = (DERTaggedObject) sequence.getObjectAt(1);
+            if (sequence.size() >= 2) {
+                ASN1Encodable first = sequence.getObjectAt(0);
+                ASN1Encodable second = sequence.getObjectAt(1);
+                
+                if (first instanceof ASN1ObjectIdentifier) {
+                    oid = (ASN1ObjectIdentifier) first;
+                }
+                
+                // Extrai dados do segundo elemento (pode ser tagged, octet, string, etc)
+                extractedData = extractData(second);
+            }
         } else if (obj instanceof DERTaggedObject) {
             // Formato moderno: tagged object direto
-            taggedObject = (DERTaggedObject) obj;
-            // Extrai o OID do conteúdo do tagged object
-            ASN1Encodable content = taggedObject.getObject();
+            ASN1Encodable content = ((DERTaggedObject) obj).getObject();
+            
             if (content instanceof ASN1Sequence) {
                 ASN1Sequence seq = (ASN1Sequence) content;
-                oid = (ASN1ObjectIdentifier) seq.getObjectAt(0);
-                taggedObject = (DERTaggedObject) seq.getObjectAt(1);
+                if (seq.size() >= 2) {
+                    ASN1Encodable first = seq.getObjectAt(0);
+                    ASN1Encodable second = seq.getObjectAt(1);
+                    
+                    if (first instanceof ASN1ObjectIdentifier) {
+                        oid = (ASN1ObjectIdentifier) first;
+                    }
+                    extractedData = extractData(second);
+                }
             } else {
-                // Não conseguiu extrair, usa valores padrão
-                oid = new ASN1ObjectIdentifier("0.0.0");
+                // Conteúdo direto no tagged object
+                extractedData = extractData(content);
             }
-        } else {
-            throw new Exception("Formato ASN.1 não suportado: " + obj.getClass().getName());
+        } else if (obj instanceof DEROctetString) {
+            // Alguns OIDs podem vir como octet string direto
+            extractedData = new String(((DEROctetString) obj).getOctets(), "UTF-8");
         }
         
-        DERTaggedObject taggedObject2 = (DERTaggedObject) taggedObject.getObject();
-        DEROctetString octet = null;
-        DERPrintableString print = null;
-        DERUTF8String utf8 = null;
-        DERIA5String ia5 = null;
-        
-        try {
-            octet = (DEROctetString) taggedObject2.getObject();
-        } catch (Exception e) {
-            try {
-                print = (DERPrintableString) taggedObject2.getObject();
-            } catch (Exception e1) {
-                try {
-                    utf8 = (DERUTF8String) taggedObject2.getObject();
-                } catch (Exception e2) {
-                    ia5 = (DERIA5String) taggedObject2.getObject();
-                }
-            }
+        // Se não conseguiu extrair OID, usa um padrão
+        if (oid == null) {
+            oid = new ASN1ObjectIdentifier("0.0.0");
         }
         
         String className = OIDGeneric.getPackageName() + oid.getId().replaceAll("[.]", "_");
@@ -91,11 +92,58 @@ public class OIDGeneric {
         }
         
         oidGenerico.oid = oid.getId();
-        oidGenerico.data = octet != null ? new String(octet.getOctets()) 
-                         : (print != null ? print.getString() 
-                         : (utf8 != null ? utf8.getString() : (ia5 != null ? ia5.getString() : "")));
+        oidGenerico.data = extractedData;
         oidGenerico.initialize();
         return oidGenerico;
+    }
+    
+    /**
+     * Extrai dados de qualquer tipo ASN.1 de forma segura
+     */
+    private static String extractData(ASN1Encodable encodable) {
+        if (encodable == null) {
+            return "";
+        }
+        
+        try {
+            if (encodable instanceof DERTaggedObject) {
+                DERTaggedObject tagged = (DERTaggedObject) encodable;
+                ASN1Encodable inner = tagged.getObject();
+                
+                // Recursivamente extrai do conteúdo interno
+                if (inner instanceof DERTaggedObject) {
+                    // Tagged dentro de tagged - continua recursivo
+                    return extractData(inner);
+                } else if (inner instanceof DEROctetString) {
+                    return new String(((DEROctetString) inner).getOctets(), "UTF-8");
+                } else if (inner instanceof DERPrintableString) {
+                    return ((DERPrintableString) inner).getString();
+                } else if (inner instanceof DERUTF8String) {
+                    return ((DERUTF8String) inner).getString();
+                } else if (inner instanceof DERIA5String) {
+                    return ((DERIA5String) inner).getString();
+                } else if (inner instanceof ASN1Sequence) {
+                    // Se for sequence, tenta extrair do primeiro elemento
+                    ASN1Sequence seq = (ASN1Sequence) inner;
+                    if (seq.size() > 0) {
+                        return extractData(seq.getObjectAt(0));
+                    }
+                }
+            } else if (encodable instanceof DEROctetString) {
+                return new String(((DEROctetString) encodable).getOctets(), "UTF-8");
+            } else if (encodable instanceof DERPrintableString) {
+                return ((DERPrintableString) encodable).getString();
+            } else if (encodable instanceof DERUTF8String) {
+                return ((DERUTF8String) encodable).getString();
+            } else if (encodable instanceof DERIA5String) {
+                return ((DERIA5String) encodable).getString();
+            }
+        } catch (Exception e) {
+            // Se falhar qualquer conversão, retorna string vazia
+            return "";
+        }
+        
+        return "";
     }
 
     public static OIDGeneric getInstance(DerValue der) throws IOException, Exception {
