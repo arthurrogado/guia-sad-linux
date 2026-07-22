@@ -61,7 +61,8 @@ echo "Compilando correções..."
 "$JAVAC" -cp "$SAD_DIR:$(ls "$SAD_DIR"/*.jar 2>/dev/null | tr '\n' ':')" \
   -d "$TMPOUT" \
   "$PATCH_DIR/CertificadoA3RepositoryImpl.java" \
-  "$PATCH_DIR/TrustAllCertificates.java"
+  "$PATCH_DIR/TrustAllCertificates.java" \
+  "$PATCH_DIR/OIDGeneric.java"
 
 # --- Injetar .class -------------------------------------------------------
 echo "Injetando .class corrigidos em $SAD_DIR ..."
@@ -71,6 +72,8 @@ cp -v "$TMPOUT/br/gov/go/detran/sad/impl/CertificadoA3RepositoryImpl\$1.class" \
       "$SAD_DIR/br/gov/go/detran/sad/impl/" 2>/dev/null || true
 cp -v "$TMPOUT/br/gov/go/detran/rs/client/TrustAllCertificates.class" \
       "$SAD_DIR/br/gov/go/detran/rs/client/"
+cp -v "$TMPOUT/org/demoiselle/signer/core/oid/OIDGeneric.class" \
+      "$SAD_DIR/org/demoiselle/signer/core/oid/"
 
 # --- drivers.properties (eToken como 1º driver) ---------------------------
 SIGNNER_DIR="$HOME/.signer"

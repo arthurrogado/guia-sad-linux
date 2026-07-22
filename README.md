@@ -19,6 +19,10 @@ dois pontos do código compilado, que foram contornados aqui:
 2. **`TrustAllCertificates`** — configurava o SSL com `KeyManager = null`, então a
    conexão com o servidor de autenticação (**mTLS**) não enviava o certificado do
    token. Corrigido para usar o `KeyStore` do token como `KeyManager`.
+3. **`OIDGeneric`** (Demoiselle Signer) — fazia cast rígido de `DLSequence` ao ler
+   extensões ICP-Brasil de certificados modernos (v5/v6), que usam `DERTaggedObject`.
+   Corrigido para aceitar ambos os formatos ASN.1, permitindo o uso de certificados
+   A1 (.pfx) e A3 com estruturas modernas.
 
 Além disso, o Demoiselle Signer precisa do eToken registrado como **primeiro driver**
 em `~/.signer/drivers.properties`.
@@ -85,7 +89,8 @@ guia-sad-linux/
 ├── patches/
 │   ├── patch.sh                      # recompila e injeta os .class corrigidos
 │   ├── CertificadoA3RepositoryImpl.java   # correção 1 (CallbackHandler do token)
-│   └── TrustAllCertificates.java          # correção 2 (KeyManager / mTLS)
+│   ├── TrustAllCertificates.java          # correção 2 (KeyManager / mTLS)
+│   └── OIDGeneric.java                    # correção 3 (ASN.1 ICP-Brasil moderno)
 ├── scripts/
 │   ├── instalar.sh                   # instalação completa (JDK + patch + .desktop)
 │   └── sad-assinador.sh              # launcher que detecta o JDK automaticamente
