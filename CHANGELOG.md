@@ -6,6 +6,11 @@ Preparado para o SAD Assinador **1.4.1 (DCXE)** e reorganizado para ser
 fácil de distribuir e usar.
 
 ### Adicionado
+- **Menu único no terminal**: rodar `./sad-assinador.sh` mostra as opções
+  1) instalar/atualizar o `.exe` da pasta, 2) abrir, 3) diagnóstico,
+  4) apagar a senha salva, 5) remover atalhos, 6) sair. Pelo ícone do
+  desktop (sem terminal) continua abrindo direto, e as flags seguem
+  funcionando para scripts.
 - **Instalação em um passo**: `./sad-assinador.sh` acha o `.exe` mais
   novo da pasta, extrai, detecta o driver, compila os patches, configura
   o token e abre. Não precisa rodar `extract-sad.sh` antes.

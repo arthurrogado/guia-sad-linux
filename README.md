@@ -49,7 +49,23 @@ cd sad-assinador
 ./sad-assinador.sh
 ```
 
-Na primeira execução o script:
+Ele abre um menu simples:
+
+```
+  SAD Assinador — Linux
+  Instalado: versão 1.4.1
+  Executável na pasta: SAD-Assinadorv1.4.1.exe
+
+  1) Instalar / atualizar o .exe desta pasta
+  2) Abrir o SAD
+  3) Diagnóstico do ambiente
+  4) Apagar a senha do token salva
+  5) Remover os atalhos
+  6) Sair
+```
+
+Escolha **1** para preparar e **2** para abrir (ou já abra pelo atalho).
+Na primeira instalação o script:
 
 1. encontra o `.exe` mais novo da pasta e extrai sozinho;
 2. detecta o driver PKCS#11 e o token conectado;
@@ -91,7 +107,7 @@ continuam na pasta; o launcher sempre usa a mais nova.
 
 | Comando | O que faz |
 |---------|-----------|
-| `./sad-assinador.sh` | Abre o SAD (faz a instalação na primeira vez) |
+| `./sad-assinador.sh` | Menu: instalar, abrir, diagnóstico, senha, atalhos |
 | `./sad-assinador.sh --nao-abrir` | Prepara tudo sem abrir |
 | `./sad-assinador.sh --atalho` | Cria/atualiza o atalho e abre |
 | `./sad-assinador.sh --sem-atalho` | Abre sem mexer em atalhos |
@@ -117,6 +133,8 @@ Log de execução: `~/.local/state/sad-assinador/launcher.log`
 | Erro de compilação | Confira se o Zulu 8 FX está em `~/java/` (`./sad-assinador.sh --diag`) |
 
 Mais detalhes em [docs/troubleshooting.md](docs/troubleshooting.md).
+Automação da tela (clicar em **Assinar Documento(s)** por script):
+[docs/automacao-tela.md](docs/automacao-tela.md).
 
 ---
 

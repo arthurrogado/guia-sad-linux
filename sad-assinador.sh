@@ -10,7 +10,7 @@
 #   - cria/atualiza o atalho no menu de aplicativos e na Área de Trabalho
 #
 # Uso:
-#   ./sad-assinador.sh                abre o SAD (instala na primeira vez)
+#   ./sad-assinador.sh                menu: instalar, abrir, diagnóstico...
 #   ./sad-assinador.sh --nao-abrir    prepara tudo e não abre
 #   ./sad-assinador.sh --atalho       cria/atualiza o atalho
 #   ./sad-assinador.sh --sem-atalho   abre sem mexer em atalhos
@@ -36,6 +36,7 @@ mkdir -p "$CONFIG_DIR" "$STATE_DIR"
 chmod 700 "$CONFIG_DIR" 2>/dev/null || true
 
 # ── Saída: terminal + log (para diagnosticar quando aberto pelo ícone) ──────
+if [ -t 0 ] || [ -t 1 ]; then SAD_TTY=1; else SAD_TTY=0; fi
 if [ -t 1 ]; then
   exec > >(tee -a "$LOG_FILE") 2>&1
 else
@@ -316,6 +317,55 @@ StartupWMClass=br.gov.go.detran.sad.MainApp"
   fi
 }
 
+# ── Menu único (quando aberto pelo terminal) ───────────────────────────────
+# Sem argumentos e num terminal: mostra o menu e deixa escolher o que fazer.
+# Pelo ícone (sem terminal) ou com flags, segue direto sem menu.
+if [ "$MODE" = "run" ] && [ "$SAD_TTY" = 1 ] && [ "${SAD_NAO_MENU:-0}" != "1" ]; then
+  MENU_SAD="$(choose_sad_dir)"
+  if [ -n "$MENU_SAD" ]; then
+    MENU_VER="$(grep -oP '^version\s*=\s*\K\S+' "$MENU_SAD/config.properties" 2>/dev/null || echo '?')"
+    MENU_ESTADO="Instalado: versão $MENU_VER"
+  else
+    MENU_ESTADO="Ainda não instalado"
+  fi
+  shopt -s nullglob
+  MENU_EXES=("$DIR"/SAD-Assinadorv*.exe)
+  shopt -u nullglob
+  if [ "${#MENU_EXES[@]}" -gt 0 ]; then
+    MENU_EXE="Executável na pasta: $(basename "${MENU_EXES[${#MENU_EXES[@]}-1]}")"
+  else
+    MENU_EXE="Nenhum .exe na pasta (baixe no site do Detran-GO)"
+  fi
+
+  echo ""
+  echo "═══════════════════════════════════════════════"
+  echo "  SAD Assinador — Linux"
+  echo "  $MENU_ESTADO"
+  echo "  $MENU_EXE"
+  echo "═══════════════════════════════════════════════"
+  echo ""
+  echo "  1) Instalar / atualizar o .exe desta pasta"
+  echo "  2) Abrir o SAD"
+  echo "  3) Diagnóstico do ambiente"
+  echo "  4) Apagar a senha do token salva"
+  echo "  5) Remover os atalhos"
+  echo "  6) Sair"
+  echo ""
+  if [ -n "$MENU_SAD" ]; then MENU_PADRAO=2; else MENU_PADRAO=1; fi
+  read -r -p "Escolha [$MENU_PADRAO]: " MENU_OPT || MENU_OPT=""
+  MENU_OPT="${MENU_OPT:-$MENU_PADRAO}"
+  case "$MENU_OPT" in
+    1) MODE="install" ;;
+    2) MODE="run" ;;
+    3) MODE="diag" ;;
+    4) MODE="reset-pin" ;;
+    5) MODE="uninstall" ;;
+    6) exit 0 ;;
+    *) echo "Opção inválida: $MENU_OPT"; exit 2 ;;
+  esac
+  echo ""
+fi
+
 # ── 9. Modos especiais ──────────────────────────────────────────────────────
 if [ "$MODE" = "uninstall" ]; then
   rm -f "$APPS_DIR/sad-assinador.desktop" "$DESKTOP_DIR/sad-assinador.desktop"
@@ -499,7 +549,7 @@ if [ "$MODE" = "check" ]; then
 fi
 
 if [ "$MODE" = "install" ]; then
-  log "Tudo preparado. Abra quando quiser: $DIR/sad-assinador.sh"
+  log "Tudo preparado. Para abrir: $DIR/sad-assinador.sh (opção 2) ou pelo atalho."
   [ "$HAS_GUI" = 1 ] && zenity --info --timeout=5 --title="SAD Assinador" --width=380 \
     --text="Tudo pronto para a versão $DETECTED_VERSION.\n\nAbra pelo atalho \"SAD Assinador\"." >/dev/null 2>&1 || true
   exit 0
