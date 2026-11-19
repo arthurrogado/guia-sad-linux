@@ -1,25 +1,13 @@
-# Não versionar binários do programa proprietário do Detran/SafeNet
-*.class
-*.jar
+# Arquivos do SAD (não redistribuir) e extrações locais
 *.exe
 *.zip
-SAD-Assinador*/
-Apps/
-java/
-
-# Arquivos de log e configurações locais
-*.log
-.signer/
-.sad/
-
-# Sensível (nunca commitar)
-config.properties
-wso2.properties
-secrets/
-*.key
-*.p12
 *.pfx
+SAD-Assinadorv*/
 
-# SO
+# Artefatos de build
+build/
+
+# Dados locais / anotações
+tmp/
+*.env
 .DS_Store
-Thumbs.db

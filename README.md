@@ -1,110 +1,171 @@
-# Guia SAD Assinador no Linux (token eToken)
+# SAD Assinador para Linux
 
-Este repositório contém as **correções necessárias para rodar o SAD Assinador
-(Detran-GO) no Linux com certificado em token USB SafeNet eToken 5100/5110**,
-além de scripts de instalação e um launcher reproduzível.
+Launcher que faz o **SAD Assinador (Detran-GO)** — oficialmente só para
+Windows — rodar no Linux **com o token A3 já autenticado**.
 
-> ⚠️ **Este repositório NÃO redistribui o programa do Detran.** Ele contém apenas
-> as correções (código-fonte Java) e os scripts. Você precisa do instalador oficial
-> do SAD Assinador (`.exe`) extraído, ou da pasta já descompactada.
+O resultado é simples: você clica no ícone e a tela de **Consulta de
+Documentos** abre direto, com o certificado do token logado. Sem entrar na
+engrenagem, sem configurar o A3 na mão, sem digitar a senha toda vez.
 
-## Por que isto existe
+> Este repositório **não distribui** o executável do SAD. Ele apenas
+> adapta a versão oficial (Windows) para rodar no Linux. Baixe o `.exe` no
+> site do Detran-GO:
+> <https://goias.gov.br/detran/sad-assinador-digital/>
 
-O SAD Assinador foi feito para Windows. No Linux, o fluxo de token USB quebra em
-dois pontos do código compilado, que foram contornados aqui:
+---
 
-1. **`CertificadoA3RepositoryImpl`** — criava o `KeyStore.Builder` do PKCS#11 com um
-   `CallbackHandler` **nulo**, o que lança `NullPointerException` no Java 8/Linux.
-   Corrigido para fornecer o PIN ao token via `CallbackHandler` próprio.
-2. **`TrustAllCertificates`** — configurava o SSL com `KeyManager = null`, então a
-   conexão com o servidor de autenticação (**mTLS**) não enviava o certificado do
-   token. Corrigido para usar o `KeyStore` do token como `KeyManager`.
-3. **`OIDGeneric`** (Demoiselle Signer) — fazia cast rígido de `DLSequence` ao ler
-   extensões ICP-Brasil de certificados modernos (v5/v6), que usam `DERTaggedObject`.
-   Corrigido para aceitar ambos os formatos ASN.1, permitindo o uso de certificados
-   A1 (.pfx) e A3 com estruturas modernas.
+## Requisitos
 
-Além disso, o Demoiselle Signer precisa do eToken registrado como **primeiro driver**
-em `~/.signer/drivers.properties`.
+| Item | Como instalar |
+|------|----------------|
+| Java 8 com JavaFX (Zulu 8 FX) | veja abaixo |
+| Driver do token A3 | `libeToken.so` (SafeNet/eToken) já vem com o driver do fabricante |
+| `pcscd` | `sudo apt install pcscd` |
+| `7z`, `gpg`, `zenity` | `sudo apt install p7zip-full gnupg zenity` |
 
-## Pré-requisitos
-
-- Linux (testado no Zorin OS 18 / Ubuntu 24.04).
-- Token USB **SafeNet eToken 5100/5110** conectado.
-- **SafeNet Authentication Client (SAC) para Linux** instalado (proprietário, portal
-  Thales). Ele fornece `/usr/lib/libeToken.so`. Sem ele, o Java não enxerga o token.
-- `pcscd` ativo (`systemctl status pcscd`).
-- O programa SAD Assinador v1.2.0 extraído em uma pasta.
-
-## Instalação rápida (recomendada)
+### Java 8 FX (uma vez só)
 
 ```bash
-# 1. Extraia o SAD Assinador (do .exe oficial) em alguma pasta, ex.:
-#    ~/Downloads/SAD Assinador/SAD-Assinadorv1.2.0
-
-# 2. Rode o instalador deste repositório:
-git clone https://github.com/arthurrogado/guia-sad-linux.git
-cd guia-sad-linux
-./scripts/instalar.sh "/home/arthur/Downloads/SAD Assinador/SAD-Assinadorv1.2.0"
+mkdir -p ~/java && cd ~/java
+wget https://cdn.azul.com/zulu/bin/zulu8.78.0.19-ca-fx-jdk8.0.412-linux_x64.tar.gz
+tar -xzf zulu8.78.0.19-ca-fx-jdk8.0.412-linux_x64.tar.gz
 ```
 
-O `instalar.sh` vai: baixar o JDK 8 + JavaFX (Zulu FX) para `~/java`, copiar o SAD
-para `~/Apps/SAD`, aplicar o patch de correções e criar um atalho no menu de
-aplicativos.
+O launcher procura o Java sozinho em `~/java/zulu*fx*/bin/java`.
 
-## Uso manual (sem o instalador)
+---
+
+## Instalação (3 passos)
 
 ```bash
-# Aplicar só as correções numa pasta do SAD já existente:
-./patches/patch.sh /caminho/para/SAD-Assinadorv1.2.0
+# 1. clone
+git clone https://github.com/arthurrogado/guia-sad-linux.git sad-assinador
+cd sad-assinador
+
+# 2. baixe o SAD no site do Detran-GO e coloque o .exe nesta pasta
+#    (ex.: SAD-Assinadorv1.4.1.exe)
+
+# 3. rode
+./sad-assinador.sh
 ```
 
-O `patch.sh` já faz tudo sozinho: recompila/injeta os `.class`, cria o
-`~/.signer/drivers.properties`, **copia um `sad-assinador.sh` para DENTRO da pasta
-do SAD** (irmão do programa) e **cria um atalho `SAD Assinador (Linux)` no menu de
-aplicativos** (`.desktop` em `~/.local/share/applications/`).
+Na primeira execução o script:
 
-Depois é só:
-- clicar no atalho do menu, **ou**
-- rodar direto `sad-assinador.sh` dentro da pasta do SAD.
+1. encontra o `.exe` mais novo da pasta e extrai sozinho;
+2. detecta o driver PKCS#11 e o token conectado;
+3. compila os ajustes Java contra aquela versão;
+4. pergunta se você quer criar o atalho no menu de aplicativos / Área de
+   Trabalho;
+5. pede a **senha do token uma única vez** e salva criptografada em
+   `~/.config/assinador/token.pin.gpg`;
+6. abre o SAD já logado.
 
-> Observação: o `.desktop` aponta para o caminho absoluto da pasta onde o patch foi
-> aplicado. Se você mover a pasta do SAD depois, rode o `patch.sh` de novo ou edite
-> o `Exec=` do arquivo `~/.local/share/applications/sad-assinador.desktop`.
+Depois disso, é só clicar no ícone **SAD Assinador**.
 
-## Configurando o certificado (primeiro uso)
+### Se preferir instalar sem abrir
 
-1. Abra o SAD (menu de aplicativos ou `sad-assinador.sh`).
-2. Na tela de login, clique no **ícone de engrenagem** (canto superior).
-3. Vá em **Configurar Certificado → Certificado A3**.
-4. Campo **Módulo**: `/usr/lib/libeToken.so`
-5. Campo **Senha**: seu **PIN do token**.
-6. Clique em **Salvar**.
-7. Volte e faça o **login** normalmente.
-
-## Estrutura do repositório
-
-```
-guia-sad-linux/
-├── patches/
-│   ├── patch.sh                      # recompila e injeta os .class corrigidos
-│   ├── CertificadoA3RepositoryImpl.java   # correção 1 (CallbackHandler do token)
-│   ├── TrustAllCertificates.java          # correção 2 (KeyManager / mTLS)
-│   └── OIDGeneric.java                    # correção 3 (ASN.1 ICP-Brasil moderno)
-├── scripts/
-│   ├── instalar.sh                   # instalação completa (JDK + patch + .desktop)
-│   └── sad-assinador.sh              # launcher que detecta o JDK automaticamente
-├── .gitignore
-└── README.md
+```bash
+./sad-assinador.sh --nao-abrir          # prepara tudo e sai
+./sad-assinador.sh --atalho             # cria atalho e abre
+./sad-assinador.sh --sem-atalho         # abre sem criar atalho
 ```
 
-## Notas de segurança
+---
 
-- Nenhum dado pessoal (PIN, certificados, tokens de API) é versionado.
-- O `config.properties` original do Detran **não** é tocado por estes scripts.
-- O SAC (SafeNet) é software proprietário e deve ser obtido no portal oficial Thales.
+## Atualizar para uma versão nova
 
-## Licença
+Baixe o `.exe` novo, coloque na pasta e rode:
 
-As correções aqui são disponibilizadas para fins de compatibilidade no Linux.
-O programa SAD Assinador pertence ao Detran-GO; respeite os termos de uso dele.
+```bash
+./extract-sad.sh                       # pega o .exe mais novo da pasta
+# ou
+./extract-sad.sh SAD-Assinadorv1.5.0.exe
+```
+
+Ele extrai, recompila os ajustes e atualiza o atalho. Versões antigas
+continuam na pasta; o launcher sempre usa a mais nova.
+
+---
+
+## Comandos
+
+| Comando | O que faz |
+|---------|-----------|
+| `./sad-assinador.sh` | Abre o SAD (faz a instalação na primeira vez) |
+| `./sad-assinador.sh --nao-abrir` | Prepara tudo sem abrir |
+| `./sad-assinador.sh --atalho` | Cria/atualiza o atalho e abre |
+| `./sad-assinador.sh --sem-atalho` | Abre sem mexer em atalhos |
+| `./sad-assinador.sh --check` | Só valida o ambiente |
+| `./sad-assinador.sh --diag` | Diagnóstico completo |
+| `./sad-assinador.sh --reset-pin` | Apaga a senha salva (pede de novo) |
+| `./sad-assinador.sh --desinstalar` | Remove os atalhos |
+| `./extract-sad.sh [arquivo.exe]` | Extrai/atualiza uma versão |
+| `SAD_VERSION=1.3.0 ./sad-assinador.sh` | Força uma versão específica |
+
+Log de execução: `~/.local/state/sad-assinador/launcher.log`
+
+---
+
+## Problemas comuns
+
+| Sintoma | Solução |
+|---------|---------|
+| "Nenhum driver PKCS#11 encontrado" | Instale o driver do seu token (SafeNet/eToken) e reconecte o USB |
+| Certificado não aparece | `./sad-assinador.sh --reset-pin` e digite a senha de novo |
+| Token não reconhecido | `sudo systemctl restart pcscd` e confira com `pcsc_scan` |
+| Não abre pelo ícone | Rode `./sad-assinador.sh` no terminal e veja o log |
+| Erro de compilação | Confira se o Zulu 8 FX está em `~/java/` (`./sad-assinador.sh --diag`) |
+
+Mais detalhes em [docs/troubleshooting.md](docs/troubleshooting.md).
+
+---
+
+## Como funciona (resumo)
+
+O SAD foi feito para Windows e tem três comportamentos que quebram no
+Linux. O launcher contorna os três:
+
+1. **"Configure o certificado para utilizar o Assinador"** — o
+   `VerificaSO` original mostra esse erro quando `isUnix()` é verdadeiro.
+   Um `VerificaSO` reescrito segue direto para a seleção de certificado.
+2. **`Uninitialized keystore`** — a `KeyStore` PKCS#11 precisa de `load()`
+   com o PIN antes de listar aliases. O `WrapperKeyStoreSpi` tolera o erro
+   e o `SadPreMain` autentica com o PIN salvo.
+3. **Engrenagem toda vez** — a senha do token é salva criptografada (GPG
+   AES256, chave derivada de `usuário@machine-id`) e reutilizada.
+
+Fontes dos ajustes em [`src/`](src/). Detalhes técnicos em
+[docs/architecture.md](docs/architecture.md) e
+[docs/internals.md](docs/internals.md).
+
+---
+
+## Estrutura
+
+```
+.
+├── sad-assinador.sh      # ponto de entrada: instala e abre
+├── extract-sad.sh        # extrai/atualiza uma versão do .exe
+├── build.sh              # compila os ajustes Java
+├── src/                  # código Java dos ajustes
+│   ├── SadPreMain.java
+│   └── br/gov/go/detran/sad/
+│       ├── WrapperKeyStoreSpi.java
+│       └── controller/VerificaSO.java
+├── docs/                 # documentação técnica
+└── SAD-AssinadorvX.Y.Z/  # gerado na instalação (não versionado)
+```
+
+---
+
+## Projeto anterior (A1/.pfx e patches manuais)
+
+A versão antiga deste guia (patching manual de `CertificadoA3RepositoryImpl`,
+`TrustAllCertificates` e `OIDGeneric`, com configuração do certificado pela
+engrenagem) está preservada em [`legacy/`](legacy/) e no histórico do git.
+O launcher atual não usa esses patches; ele já autentica o A3 sozinho.
+
+## Aviso
+
+Projeto não oficial, sem vínculo com o Detran-GO. O SAD Assinador é
+propriedade do Detran-GO; use sempre a versão baixada no site oficial.
