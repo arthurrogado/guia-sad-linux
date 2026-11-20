@@ -2,9 +2,9 @@
 # extract-sad.sh — extrai uma nova versão do SAD Assinador (.exe) para Linux.
 #
 # Uso:
-#   ./extract-sad.sh SAD-Assinadorv1.4.1.exe
-#   ./extract-sad.sh                 # pega o .exe mais novo nesta pasta
-#   ./extract-sad.sh --reset-pin     # apaga a senha do token salva
+#   ./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
+#   ./src/extract-sad.sh                 # pega o .exe mais novo da raiz
+#   ./src/extract-sad.sh --reset-pin     # apaga a senha do token salva
 #
 # O que faz:
 #   1) Extrai o .exe (que é um ZIP embutido) para ./SAD-AssinadorvX.Y.Z/
@@ -15,19 +15,20 @@
 # É idempotente: pode rodar de novo com o mesmo .exe sem quebrar nada.
 set -euo pipefail
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(cd "$(dirname "$0")" && pwd)"          # pasta src/
+PROJECT_DIR="$(cd "$DIR/.." && pwd)"          # raiz do projeto
 
 usage() {
   cat <<EOF
 Uso: $0 [SAD-AssinadorvX.Y.Z.exe | --reset-pin]
 
 Sem argumento, usa o .exe mais recente encontrado em:
-  $DIR
+  $PROJECT_DIR
 EOF
 }
 
 if [ "${1:-}" = "--reset-pin" ]; then
-  exec "$DIR/sad-assinador.sh" --reset-pin
+  exec "$PROJECT_DIR/sad-assinador.sh" --reset-pin
 fi
 
 if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
@@ -38,9 +39,9 @@ if [ $# -ge 1 ]; then
   INSTALLER="$1"
 else
   # Procura o .exe mais novo (mtime)
-  INSTALLER="$(ls -t "$DIR"/SAD-Assinadorv*.exe 2>/dev/null | head -1 || true)"
+  INSTALLER="$(ls -t "$PROJECT_DIR"/SAD-Assinadorv*.exe 2>/dev/null | head -1 || true)"
   if [ -z "$INSTALLER" ]; then
-    echo "ERRO: nenhum SAD-AssinadorvX.Y.Z.exe encontrado em $DIR" >&2
+    echo "ERRO: nenhum SAD-AssinadorvX.Y.Z.exe encontrado em $PROJECT_DIR" >&2
     usage >&2
     exit 2
   fi
@@ -55,7 +56,7 @@ case "$BASENAME" in
 esac
 
 VERSION="${BASENAME#SAD-Assinadorv}"; VERSION="${VERSION%.exe}"
-TARGET_DIR="$DIR/SAD-Assinadorv${VERSION}"
+TARGET_DIR="$PROJECT_DIR/SAD-Assinadorv${VERSION}"
 
 command -v 7z >/dev/null 2>&1 || { echo "ERRO: 7z não instalado (sudo apt install p7zip-full)" >&2; exit 1; }
 
@@ -88,7 +89,7 @@ echo "[2/4] Compilando patches contra a versão $ACTUAL_VER ..."
 bash "$DIR/build.sh" "$TARGET_DIR"
 
 echo "[3/4] Detectando/configurando token A3 ..."
-"$DIR/sad-assinador.sh" --check --atalho || true
+"$PROJECT_DIR/sad-assinador.sh" --check --atalho || true
 
 echo "[4/4] Atalhos atualizados."
 
@@ -98,10 +99,10 @@ cat <<EOF
 
   Versão:   ${ACTUAL_VER}
   Pasta:    ${TARGET_DIR}
-  Abrir:    ${DIR}/sad-assinador.sh
+  Abrir:    ${PROJECT_DIR}/sad-assinador.sh
   Atalhos:  menu de aplicativos + Área de Trabalho
 
 Só abrir o ícone "SAD Assinador" (ou rodar o comando acima).
 A senha do token é pedida uma única vez e fica salva criptografada.
-Se trocar o token/senha: ./extract-sad.sh --reset-pin
+Se trocar o token/senha: ./src/extract-sad.sh --reset-pin
 EOF

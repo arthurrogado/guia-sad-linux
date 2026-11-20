@@ -6,6 +6,9 @@ Preparado para o SAD Assinador **1.4.1 (DCXE)** e reorganizado para ser
 fácil de distribuir e usar.
 
 ### Adicionado
+- **Raiz enxuta**: ficaram na raiz apenas `sad-assinador.sh`, `README.md`,
+  `LICENSE` e a pasta `src/`. `build.sh`, `extract-sad.sh`, `docs/`,
+  `legacy/` e `CHANGELOG.md` foram para dentro de `src/`.
 - **Menu único no terminal**: rodar `./sad-assinador.sh` mostra as opções
   1) instalar/atualizar o `.exe` da pasta, 2) abrir, 3) diagnóstico,
   4) apagar a senha salva, 5) remover atalhos, 6) sair. Pelo ícone do

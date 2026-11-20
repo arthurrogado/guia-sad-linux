@@ -93,9 +93,9 @@ Depois disso, é só clicar no ícone **SAD Assinador**.
 Baixe o `.exe` novo, coloque na pasta e rode:
 
 ```bash
-./extract-sad.sh                       # pega o .exe mais novo da pasta
+./src/extract-sad.sh                       # pega o .exe mais novo da pasta
 # ou
-./extract-sad.sh SAD-Assinadorv1.5.0.exe
+./src/extract-sad.sh SAD-Assinadorv1.5.0.exe
 ```
 
 Ele extrai, recompila os ajustes e atualiza o atalho. Versões antigas
@@ -115,7 +115,7 @@ continuam na pasta; o launcher sempre usa a mais nova.
 | `./sad-assinador.sh --diag` | Diagnóstico completo |
 | `./sad-assinador.sh --reset-pin` | Apaga a senha salva (pede de novo) |
 | `./sad-assinador.sh --desinstalar` | Remove os atalhos |
-| `./extract-sad.sh [arquivo.exe]` | Extrai/atualiza uma versão |
+| `./src/extract-sad.sh [arquivo.exe]` | Extrai/atualiza uma versão |
 | `SAD_VERSION=1.3.0 ./sad-assinador.sh` | Força uma versão específica |
 
 Log de execução: `~/.local/state/sad-assinador/launcher.log`
@@ -132,9 +132,9 @@ Log de execução: `~/.local/state/sad-assinador/launcher.log`
 | Não abre pelo ícone | Rode `./sad-assinador.sh` no terminal e veja o log |
 | Erro de compilação | Confira se o Zulu 8 FX está em `~/java/` (`./sad-assinador.sh --diag`) |
 
-Mais detalhes em [docs/troubleshooting.md](docs/troubleshooting.md).
+Mais detalhes em [src/docs/troubleshooting.md](src/docs/troubleshooting.md).
 Automação da tela (clicar em **Assinar Documento(s)** por script):
-[docs/automacao-tela.md](docs/automacao-tela.md).
+[docs/automacao-tela.md](src/docs/automacao-tela.md).
 
 ---
 
@@ -153,8 +153,8 @@ Linux. O launcher contorna os três:
    AES256, chave derivada de `usuário@machine-id`) e reutilizada.
 
 Fontes dos ajustes em [`src/`](src/). Detalhes técnicos em
-[docs/architecture.md](docs/architecture.md) e
-[docs/internals.md](docs/internals.md).
+[docs/architecture.md](src/docs/architecture.md) e
+[docs/internals.md](src/docs/internals.md).
 
 ---
 
@@ -162,16 +162,19 @@ Fontes dos ajustes em [`src/`](src/). Detalhes técnicos em
 
 ```
 .
-├── sad-assinador.sh      # ponto de entrada: instala e abre
-├── extract-sad.sh        # extrai/atualiza uma versão do .exe
-├── build.sh              # compila os ajustes Java
-├── src/                  # código Java dos ajustes
-│   ├── SadPreMain.java
-│   └── br/gov/go/detran/sad/
-│       ├── WrapperKeyStoreSpi.java
-│       └── controller/VerificaSO.java
-├── docs/                 # documentação técnica
-└── SAD-AssinadorvX.Y.Z/  # gerado na instalação (não versionado)
+├── sad-assinador.sh      # ponto de entrada: menu (instalar/abrir/diagnóstico)
+├── README.md
+├── LICENSE
+└── src/                  # tudo o que é código/documentação
+    ├── build.sh          # compila os ajustes Java
+    ├── extract-sad.sh    # extrai/atualiza uma versão do .exe
+    ├── SadPreMain.java
+    ├── br/gov/go/detran/sad/
+    │   ├── WrapperKeyStoreSpi.java
+    │   └── controller/VerificaSO.java
+    ├── docs/             # documentação técnica
+    ├── legacy/           # patches da versão antiga (referência)
+    └── CHANGELOG.md
 ```
 
 ---
@@ -180,7 +183,7 @@ Fontes dos ajustes em [`src/`](src/). Detalhes técnicos em
 
 A versão antiga deste guia (patching manual de `CertificadoA3RepositoryImpl`,
 `TrustAllCertificates` e `OIDGeneric`, com configuração do certificado pela
-engrenagem) está preservada em [`legacy/`](legacy/) e no histórico do git.
+engrenagem) está preservada em [`legacy/`](src/legacy/) e no histórico do git.
 O launcher atual não usa esses patches; ele já autentica o A3 sozinho.
 
 ## Aviso

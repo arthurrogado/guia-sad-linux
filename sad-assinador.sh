@@ -438,7 +438,8 @@ else
   need_build=1
 fi
 if [ "$need_build" = 0 ]; then
-  if find "$DIR/src" -name '*.java' -newer "$BUILD_DIR/.build-version" | grep -q .; then
+  if find "$DIR/src" -name '*.java' -not -path '*/docs/*' -not -path '*/legacy/*' \
+       -newer "$BUILD_DIR/.build-version" | grep -q .; then
     need_build=1
   fi
 fi
@@ -446,8 +447,8 @@ fi
 if [ "$need_build" = 1 ]; then
   [ "$MODE" = "check" ] && { warn "Patches não compilados para a versão $DETECTED_VERSION."; exit 1; }
   log "Compilando patches para a versão $DETECTED_VERSION..."
-  gui_progress "Preparando a versão $DETECTED_VERSION..." bash "$DIR/build.sh" "$SAD_DIR" \
-    || { gui_error "Falha ao compilar os patches. Veja o log: $LOG_FILE"; die "build.sh falhou"; }
+  gui_progress "Preparando a versão $DETECTED_VERSION..." bash "$DIR/src/build.sh" "$SAD_DIR" \
+    || { gui_error "Falha ao compilar os patches. Veja o log: $LOG_FILE"; die "src/build.sh falhou"; }
 fi
 
 # ── 11. Senha do token ──────────────────────────────────────────────────────

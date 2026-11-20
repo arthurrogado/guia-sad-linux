@@ -104,7 +104,7 @@ ls -la ~/sad-assinador/SAD-Assinadorv1.4.1/imagens/detran-log.png
 **Solução** (se o ícone não existir):
 ```bash
 # Re-extrai a pasta
-./extract-sad.sh SAD-Assinadorv1.4.1.exe
+./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
 ```
 
 ## Problemas com o launcher
@@ -128,7 +128,7 @@ tar -xzf zulu8.78.0.19-ca-fx-jdk8.0.412-linux_x64.tar.gz
 
 **Solução**:
 ```bash
-./extract-sad.sh SAD-Assinadorv1.4.1.exe
+./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
 ```
 
 ### "javac: invalid flag: ..."
@@ -159,13 +159,13 @@ Geralmente não aparece mais após nossos patches. Se aparecer:
 
 2. Re-compila os patches:
    ```bash
-   ./build.sh
+   ./src/build.sh
    ```
 
 3. Limpa e re-extrai a versão:
    ```bash
    rm -rf build SAD-Assinadorv1.4.1
-   ./extract-sad.sh SAD-Assinadorv1.4.1.exe
+   ./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
    ```
 
 ### "Configure o certificado para utilizar o Assinador"
@@ -236,7 +236,7 @@ rm -rf ~/sad-assinador/build
 
 # 5. Re-extrai tudo
 cd ~/sad-assinador/
-./extract-sad.sh SAD-Assinadorv1.4.1.exe
+./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
 
 # 6. Roda
 ./sad-assinador.sh

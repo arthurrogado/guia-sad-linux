@@ -6,15 +6,16 @@
 #   src/br/gov/go/detran/sad/controller/VerificaSO.java
 #
 # Uso:
-#   ./build.sh                 # compila contra a versão mais nova extraída
-#   ./build.sh 1.4.1           # compila contra SAD-Assinadorv1.4.1/
-#   ./build.sh /caminho/da/pasta
+#   ./src/build.sh                 # compila contra a versão mais nova extraída
+#   ./src/build.sh 1.4.1           # compila contra SAD-Assinadorv1.4.1/
+#   ./src/build.sh /caminho/da/pasta
 #
 # Requer um JDK 8 com JavaFX (ex.: Zulu 8 FX em ~/java/).
 set -euo pipefail
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
-SRC_DIR="$DIR/src"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(cd "$SCRIPT_DIR/.." && pwd)"   # raiz do projeto
+SRC_DIR="$SCRIPT_DIR"
 OUT_DIR="$DIR/build/classes"
 
 # Encontra um javac (preferência: Zulu 8 FX em ~/java)
@@ -61,10 +62,11 @@ echo "[build] Compilando patches contra a versão $SAD_VERSION ($SAD_DIR)"
 mkdir -p "$OUT_DIR"
 find "$OUT_DIR" -name '*.class' -delete 2>/dev/null || true
 
-# Lista de fontes
-mapfile -t SOURCES < <(find "$SRC_DIR" -name '*.java' | sort)
+# Lista de fontes (ignora docs/ e legacy/, que têm .java só de referência)
+mapfile -t SOURCES < <(find "$SRC_DIR" -name '*.java' \
+  -not -path '*/docs/*' -not -path '*/legacy/*' | sort)
 if [ "${#SOURCES[@]}" -eq 0 ]; then
-  echo "ERRO: nenhum .java encontrado em $SRC_DIR" >&2
+  echo "ERRO: nenhum .java de patch encontrado em $SRC_DIR" >&2
   exit 1
 fi
 

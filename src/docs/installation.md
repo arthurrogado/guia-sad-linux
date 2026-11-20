@@ -109,7 +109,7 @@ do launcher e roda:
 
 ```bash
 cd ~/sad-assinador/
-./extract-sad.sh SAD-Assinadorv1.4.1.exe
+./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
 ```
 
 Isso:
@@ -207,7 +207,7 @@ Confirma que os patches estão compilados:
 
 ```bash
 cd ~/sad-assinador
-./build.sh
+./src/build.sh
 ```
 
 Verifica se as classes estão lá:
@@ -241,5 +241,5 @@ Se não existir, o `.eex` não extraiu corretamente. Re-extrai:
 
 ```bash
 rm -rf SAD-Assinadorv1.4.1
-./extract-sad.sh SAD-Assinadorv1.4.1.exe
+./src/extract-sad.sh SAD-Assinadorv1.4.1.exe
 ```
