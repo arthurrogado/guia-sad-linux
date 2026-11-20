@@ -7,6 +7,8 @@ O resultado é simples: você clica no ícone e a tela de **Consulta de
 Documentos** abre direto, com o certificado do token logado. Sem entrar na
 engrenagem, sem configurar o A3 na mão, sem digitar a senha toda vez.
 
+> **Última release:** [v2.0.0](https://github.com/arthurrogado/guia-sad-linux/releases/tag/v2.0.0) · testado com o SAD **1.4.1 (DCXE)**
+>
 > Este repositório **não distribui** o executável do SAD. Ele apenas
 > adapta a versão oficial (Windows) para rodar no Linux. Baixe o `.exe` no
 > site do Detran-GO:
